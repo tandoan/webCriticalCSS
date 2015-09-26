@@ -1,0 +1,20 @@
+{
+  "name": "getcritical",
+  "version": "1.0.0",
+  "description": "Web front end for criticalcss",
+  "main": "index.js",
+  "dependencies": {
+    "bluebird": "^2.10.1",
+    "child-process-promise": "^1.1.0",
+    "criticalcss": "^0.6.1",
+    "express": "^4.13.3",
+    "request-promise": "^0.4.3"
+  },
+  "devDependencies": {
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tan Doan",
+  "license": "ISC"
+}
