@@ -8,10 +8,10 @@
     "child-process-promise": "^1.1.0",
     "criticalcss": "^0.6.1",
     "express": "^4.13.3",
+    "node-cache": "^3.0.0",
     "request-promise": "^0.4.3"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

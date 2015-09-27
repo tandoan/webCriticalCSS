@@ -9,6 +9,9 @@ var path = require('path');
 var Promise = require('bluebird');
 var rp = require('request-promise');
 var tmpDir = require('os').tmpDir();
+var NodeCache = require( "node-cache" );
+
+var cache = new NodeCache( { stdTTL: 600, checkperiod: 600 } );
 
 var handleFailure = function (res, err) {
     // todo: log stack trace?
@@ -42,6 +45,11 @@ var get = function (req, res) {
 
 
     console.log('url to fetch is', url);
+
+    var cachedCss = cache.get(url);
+    if(cachedCss){
+        return respondWithCss(res, cachedCss);
+    }
 
     cssPath = path.join(tmpDir, 'style.css');
     htmlPath = path.join(tmpDir, 'content.html');
@@ -97,6 +105,7 @@ var get = function (req, res) {
                             } else {
                                 console.log('criticalcss.findCritical: success');
                                 console.log(criticalCssRules);
+                                cache.set(url, criticalCssRules);
                                 return respondWithCss(res, criticalCssRules);
                             }
 
