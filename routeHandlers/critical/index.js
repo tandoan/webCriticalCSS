@@ -15,6 +15,7 @@ var cache = new NodeCache( { stdTTL: 600, checkperiod: 600 } );
 
 var handleFailure = function (res, err) {
     // todo: log stack trace?
+    console.log('error', err);
     res.status(500).send(JSON.stringify({"status": "failure"}));
 };
 
@@ -76,7 +77,7 @@ var get = function (req, res) {
 
             for (var i = 0; i < htmlAndCssReturn.css.length; i++) {
                 cssPromises.push(rp(htmlAndCssReturn.css[i]));
-                console.log('CSS to fetch: ', htmlAndCssReturn.css[i])
+                console.log('CSS to fetch: ', htmlAndCssReturn.css[i]);
             }
 
             // todo:  stop mixing promises and callbacks.  wrap critical in a promise

@@ -7,12 +7,11 @@ Alternative implementations:
 * [Penthouse](https://github.com/pocketjoso/penthouse)
 
 Todo:
+* Push out a static site at / with form
 * Add option to change screen size
 * Add sanity check on input
-* Cache results
 * Promisify the code.  No more nested callbacks. No more fs.syncWriting
 * Tests
-* Format the code (eshint/lint etc)
 
 # Why?
 Inlining critical-path CSS is good for performance.  Prevents another round trip, and prevent redering from being blocked.  And I wanted to learn some nodejs.
