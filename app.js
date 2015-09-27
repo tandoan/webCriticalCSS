@@ -3,10 +3,7 @@ var app = express();
 
 var criticalHandler = require('./routeHandlers/critical');
 
-// TOOD: serve static site
-app.get('/', function (req, res) {
-    res.send('Hello World');
-});
+app.use(express.static('public'));
 
 app.get('/api/criticalcss/*', criticalHandler.get);
 
