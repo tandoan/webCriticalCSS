@@ -94,12 +94,12 @@ function saveHtmlAndCss(cssPromise, htmlAndCssReturn) {
  * @param result an object where  result.stdout =  status: success/fail, url: string, css: [urls], and html: string
  */
 function processPhantomResult(result) {
-    var cssPromises = [],
-        phantomString = result.stdout.toString();
-
-    var htmlAndCssReturn = JSON.parse(phantomString);
+    var cssPromises = [];
+    var phantomString = result.stdout.toString();
 
     console.log('getHtmlAndCss: success:', phantomString);
+
+    var htmlAndCssReturn = JSON.parse(phantomString);
 
     if ('success' !== htmlAndCssReturn.status) {
         return Promise.reject('Failed to fetch url: ' + htmlAndCssReturn.url);

@@ -6,10 +6,6 @@
  * and an array of css links
  */
 
-//TODO: figure out how to console log and still return prop json properly.  Need to redirct to something other
-// than stdout
-//TODO: Why doesn't phantom handle https://my.oc.netflix.com properly?
-
 var system = require('system');
 var page = require('webpage').create();
 var pageUrl = system.args[1];
@@ -19,17 +15,17 @@ function isCssLink(node) {
     return (node && node.href && node.href.match(/css$/i));
 }
 
-/*
- page.onNavigationRequested = function(url, type, willNavigate, main) {
- console.log('redir')
- if (main && url!=myurl) {
- myurl = url;
- console.log("redirect caught")
- page.close()
- setTimeout('renderPage(myurl)',1); //Note the setTimeout here
- }
- };
+/**
+ *  Supress all output that isn't relevent to the json obj we want to return
+ *  TODO: figure out how to log such output and still return json properly. Need to redir to something other than stdout
  */
+page.onError = function(msg, trace) {
+    // supress all error messages
+};
+
+page.onConsoleMessage = function(msg, lineNum, sourceId) {
+    // supress all console messages
+};
 
 page.open(pageUrl, function (status) {
     if (status !== 'success') {

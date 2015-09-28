@@ -25,5 +25,5 @@ function getScriptPath() {
 module.exports = function (pageUrl) {
     var scriptPath = getScriptPath();
     console.log('getHtmlAndCss: calling phantomjs', scriptPath, pageUrl);
-    return spawn('phantomjs', [scriptPath, pageUrl], {capture: ['stdout', 'stderr']});
+    return spawn('phantomjs', ['--ignore-ssl-errors=yes', '--ssl-protocol=any', scriptPath, pageUrl], {capture: ['stdout', 'stderr']});
 };
