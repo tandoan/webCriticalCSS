@@ -20,16 +20,16 @@
     "type": "git",
     "url": "https://github.com/tandoan/webCriticalCSS"
   },
-  "keywords": {
+  "keywords": [
     "node",
     "heroku",
     "express",
     "criticalcss",
     "css"
-  },
+  ],
   "engines": {
     "node": "4.1.1"
-  }
+  },
   "author": "Tan Doan",
   "license": "ISC"
 }

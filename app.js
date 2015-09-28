@@ -2,14 +2,16 @@
 
 var express = require('express');
 var app = express();
-
 var criticalHandler = require('./routeHandlers/critical');
 
-app.use(express.static('public'));
+app.set('port', (process.env.PORT || 5000));
+
+
+app.use(express.static(__dirname + '/public'));
 
 app.get('/api/criticalcss/*', criticalHandler.get);
 
-var server = app.listen(3000, function () {
+var server = app.listen(app.get('port'), function () {
     var host = server.address().address;
     var port = server.address().port;
 
