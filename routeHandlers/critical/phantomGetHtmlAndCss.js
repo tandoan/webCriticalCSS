@@ -1,3 +1,6 @@
+/*global document, phantom*/
+
+'use strict';
 /**
  * This calls phatomjs on a url, parses for css, then returns the html,
  * and an array of css links
@@ -12,7 +15,7 @@ var pageUrl = system.args[1];
 
 // TODO: add in media=screen?
 var isCssLink = function (node) {
-    return (node && node['href'] && node['href'].match(/css$/i));
+    return (node && node.href && node.href.match(/css$/i));
 };
 
 /*
@@ -29,7 +32,7 @@ var isCssLink = function (node) {
 
 page.open(pageUrl, function (status) {
     if (status !== 'success') {
-        console.log(JSON.stringify({"status": status}));
+        console.log(JSON.stringify({"status": status, "url": pageUrl}));
         page.close();
         phantom.exit();
     }
@@ -38,7 +41,7 @@ page.open(pageUrl, function (status) {
 page.onLoadFinished = function () {
     var cssArray = [];
     var linkElements = page.evaluate(function () {
-        return document.querySelectorAll("link")
+        return document.querySelectorAll("link");
     });
     for (var i = 0; i < linkElements.length; i++) {
         if (isCssLink(linkElements[i])){
