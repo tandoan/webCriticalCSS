@@ -24,6 +24,6 @@ var getScriptPath = function () {
 
 module.exports = function (pageUrl) {
     var scriptPath = getScriptPath();
-    console.log('calling phantomjs', scriptPath, pageUrl);
+    console.log('getHtmlAndCss: calling phantomjs', scriptPath, pageUrl);
     return spawn('phantomjs', [scriptPath, pageUrl], {capture: ['stdout', 'stderr']});
 };

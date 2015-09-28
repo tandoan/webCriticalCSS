@@ -1,126 +1,156 @@
 'use strict';
 // todo: make this work for https?  doesn't seem to work for my.oc.netflix.com
 //
-
 var criticalcss = require("criticalcss");
+var NodeCache = require("node-cache");
 var fs = require('fs');
 var getHtmlAndCss = require('./getHtmlAndCss.js');
 var path = require('path');
 var Promise = require('bluebird');
 var rp = require('request-promise');
-var tmpDir = require('os').tmpDir();
-var NodeCache = require( "node-cache" );
 
-var cache = new NodeCache( { stdTTL: 600, checkperiod: 600 } );
+var writeFile = Promise.promisify(fs.writeFile);
+var getRules = Promise.promisify(criticalcss.getRules);
+var findCritical = Promise.promisify(criticalcss.findCritical);
 
-var handleFailure = function (res, err) {
+var cache = new NodeCache({stdTTL: 600, checkperiod: 600});
+
+var NO_EXTERNAL_CSS = '/* No External CSS Found */';
+
+function handleFailure(res, err) {
     // todo: log stack trace?
     console.log('error', err);
     res.status(500).send(JSON.stringify({"status": "failure"}));
-};
+}
 
-var parseForUrl = function (req) {
+function parseForUrl(req) {
     // Parse input for URL
     // 17 = /api/criticalcss/*
     // remove the front 2 chunks to get to the *
     return req.path.substr(17);
-};
+}
 
-var respondWithCss = function (res, css) {
+function respondWithCss(res, css) {
     res.type('text/css');
     res.status(200).send(css);
+    return css;
+}
 
-};
+function getCachedCss(url) {
+    return cache.get(url);
+}
 
-var get = function (req, res) {
-    console.log('starting it up');
+function cacheCss(url, css) {
+    return cache.set(url, css);
+}
 
-    var url = parseForUrl(req),
+function doGet(url, res) {
+    var criticalCss;
 
-        cssPath = '',
-        cssStr = '',
-        htmlPath = '',
-        htmlAndCssPromise,
-        htmlAndCssReturn,
-        cssPromises = [];
-
-
-    console.log('url to fetch is', url);
-
-    var cachedCss = cache.get(url);
-    if(cachedCss){
-        return respondWithCss(res, cachedCss);
+    criticalCss = getCachedCss(url);
+    if (criticalCss) {
+        return Promise.resolve(respondWithCss(res, criticalCss));
     }
 
-    cssPath = path.join(tmpDir, 'style.css');
-    htmlPath = path.join(tmpDir, 'content.html');
-
-
-    htmlAndCssPromise = getHtmlAndCss(url);
-
-    console.log('htmlAndCssPromise attempted');
-
-    htmlAndCssPromise
-        .then(function (result) {
-            console.log('getHtmlAndCss: success:', result.stdout.toString());
-            htmlAndCssReturn = JSON.parse(result.stdout.toString());
-
-            if ('success' !== htmlAndCssReturn.status) {
-                return handleFailure(res, 'Failed to fetch url:', url);
-            }
-
-            if (!htmlAndCssReturn.css.length) {
-                // Short cut it, nothing to optimize
-                console.log('No CSS to fetch');
-                return respondWithCss(res, '/* No External CSS Found */');
-            }
-
-            for (var i = 0; i < htmlAndCssReturn.css.length; i++) {
-                cssPromises.push(rp(htmlAndCssReturn.css[i]));
-                console.log('CSS to fetch: ', htmlAndCssReturn.css[i]);
-            }
-
-            // todo:  stop mixing promises and callbacks.  wrap critical in a promise
-            Promise.settle(cssPromises).then(function (results) {
-                results.forEach(function (result) {
-                    if (result.isFulfilled()) {
-                        cssStr += result.value();
-                    }
-                });
-
-                // TODO: unsynch this stuff.  Promisify it.
-                fs.writeFileSync(cssPath, cssStr);
-                fs.writeFileSync(htmlPath, htmlAndCssReturn.html);
-
-                criticalcss.getRules(cssPath, function (err, rules) {
-                    if (err) {
-                        console.log('criticalcss.getRules: failed', err);
-                        handleFailure(res, err);
-                    } else {
-                        console.log('criticalcss.getRules: success');
-
-                        criticalcss.findCritical(htmlPath, {rules: JSON.parse(rules)}, function (err, criticalCssRules) {
-                            if (err) {
-                                console.log('criticalcss.findCitical: failed', err);
-                                handleFailure(res, err);
-                            } else {
-                                console.log('criticalcss.findCritical: success');
-                                console.log(criticalCssRules);
-                                cache.set(url, criticalCssRules);
-                                return respondWithCss(res, criticalCssRules);
-                            }
-
-                        });
-                    }
-                });
-
-            }); // then for promise array
-
-        }) // then
-        .fail(function (err) {
-            console.log('getHtmlAndCss: failed:', err, htmlAndCssPromise);
-            handleFailure(res, err);
+    console.time('findCritical');
+    return fetchCriticalCss(url)
+        .then(function (criticalCss) {
+            cacheCss(url, criticalCss);
+            return Promise.resolve(respondWithCss(res, criticalCss));
+        },
+        function (error) {
+            return Promise.reject(handleFailure(res, error));
+        })
+        .finally(function(){
+            console.timeEnd('findCritical');
         });
-};
+}
+
+function saveHtmlAndCss(cssPromise, htmlAndCssReturn) {
+    var cssStr = '',
+        promises = [],
+        tmpDir = require('os').tmpDir(),
+        cssPath = path.join(tmpDir, 'style.css'),
+        htmlPath = path.join(tmpDir, 'content.html');
+
+    cssPromise.forEach(function (result) {
+        if (result.isFulfilled()) {
+            cssStr += result.value();
+        }
+    });
+
+    promises.push(writeFile(cssPath, cssStr));
+    promises.push(writeFile(htmlPath, htmlAndCssReturn.html));
+
+    return Promise.all(promises)
+        .then(function () {
+            return Promise.resolve({
+                "cssPath": cssPath,
+                "htmlPath": htmlPath
+            });
+        });
+}
+
+
+/**
+ *
+ * @param result an object where  result.stdout =  status: success/fail, url: string, css: [urls], and html: string
+ */
+function processPhantomResult(result) {
+    var cssPromises = [],
+        phantomString = result.stdout.toString();
+
+    var htmlAndCssReturn = JSON.parse(phantomString);
+
+    console.log('getHtmlAndCss: success:', phantomString);
+
+    if ('success' !== htmlAndCssReturn.status) {
+        return Promise.reject('Failed to fetch url: ' + htmlAndCssReturn.url);
+    }
+
+    if (!htmlAndCssReturn.css.length) {
+        console.log('No CSS to fetch');
+        return Promise.resolve(NO_EXTERNAL_CSS);
+    }
+
+    for (var i = 0; i < htmlAndCssReturn.css.length; i++) {
+        cssPromises.push(rp(htmlAndCssReturn.css[i]));
+        console.log('CSS to fetch: ', htmlAndCssReturn.css[i]);
+    }
+
+    return Promise.settle(cssPromises)
+        .then(function saveHtmlAndCssWrapper(result) {
+            return saveHtmlAndCss(result, htmlAndCssReturn);
+        })
+        .then(function criticalGetRulesWrapper(pathsObj) {
+            return getRules(pathsObj.cssPath)
+                .then(function criticalFindCriticalWrapper(rules) {
+                    return findCritical(pathsObj.htmlPath, {rules: JSON.parse(rules)});
+                });
+        });
+
+}
+
+function fetchCriticalCss(url) {
+    var htmlAndCssPromise = getHtmlAndCss(url);
+
+    return htmlAndCssPromise.then(
+        function (result) {
+            return processPhantomResult(result);
+        },
+        function (err) {
+            console.log('getHtmlAndCss: failed:', err);
+            return Promise.reject(err);
+        });
+}
+
+function get(req, res) {
+    console.log('Starting get');
+    doGet(parseForUrl(req), res)
+        .finally(function () {
+            console.log('Ending request');
+            res.end();
+        });
+}
 
 exports.get = get;

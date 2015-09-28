@@ -10,7 +10,6 @@ Todo:
 * Push out a static site at / with form
 * Add option to change screen size
 * Add sanity check on input
-* Promisify the code.  No more nested callbacks. No more fs.syncWriting
 * Tests
 
 # Why?
