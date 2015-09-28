@@ -6,7 +6,8 @@
  * and an array of css links
  */
 
-//TODO: figure out how to console log and still return prop json properly.  Need to redirct to something other than stdout
+//TODO: figure out how to console log and still return prop json properly.  Need to redirct to something other
+// than stdout
 //TODO: Why doesn't phantom handle https://my.oc.netflix.com properly?
 
 var system = require('system');
@@ -14,9 +15,9 @@ var page = require('webpage').create();
 var pageUrl = system.args[1];
 
 // TODO: add in media=screen?
-var isCssLink = function (node) {
+function isCssLink(node) {
     return (node && node.href && node.href.match(/css$/i));
-};
+}
 
 /*
  page.onNavigationRequested = function(url, type, willNavigate, main) {
@@ -44,7 +45,7 @@ page.onLoadFinished = function () {
         return document.querySelectorAll("link");
     });
     for (var i = 0; i < linkElements.length; i++) {
-        if (isCssLink(linkElements[i])){
+        if (isCssLink(linkElements[i])) {
             cssArray.push(linkElements[i]['href']);
         }
     }

@@ -7,7 +7,7 @@
 var path = require('path');
 var spawn = require('child-process-promise').spawn;
 
-var getScriptPath = function () {
+function getScriptPath() {
 
     var currentFile = __filename;
     var parts = currentFile.split(path.sep);
@@ -20,7 +20,7 @@ var getScriptPath = function () {
         f = path.sep + f;
     }
     return f;
-};
+}
 
 module.exports = function (pageUrl) {
     var scriptPath = getScriptPath();

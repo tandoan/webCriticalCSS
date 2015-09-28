@@ -1,6 +1,5 @@
 'use strict';
-// todo: make this work for https?  doesn't seem to work for my.oc.netflix.com
-//
+
 var criticalcss = require("criticalcss");
 var NodeCache = require("node-cache");
 var fs = require('fs');
@@ -45,11 +44,9 @@ function cacheCss(url, css) {
 }
 
 function doGet(url, res) {
-    var criticalCss;
-
-    criticalCss = getCachedCss(url);
-    if (criticalCss) {
-        return Promise.resolve(respondWithCss(res, criticalCss));
+    var cachedCss = getCachedCss(url);
+    if (cachedCss) {
+        return Promise.resolve(respondWithCss(res, cachedCss));
     }
 
     console.time('findCritical');
@@ -61,7 +58,7 @@ function doGet(url, res) {
         function (error) {
             return Promise.reject(handleFailure(res, error));
         })
-        .finally(function(){
+        .finally(function () {
             console.timeEnd('findCritical');
         });
 }
@@ -113,6 +110,7 @@ function processPhantomResult(result) {
         return Promise.resolve(NO_EXTERNAL_CSS);
     }
 
+    // for instead of map, because order is important
     for (var i = 0; i < htmlAndCssReturn.css.length; i++) {
         cssPromises.push(rp(htmlAndCssReturn.css[i]));
         console.log('CSS to fetch: ', htmlAndCssReturn.css[i]);
@@ -132,12 +130,8 @@ function processPhantomResult(result) {
 }
 
 function fetchCriticalCss(url) {
-    var htmlAndCssPromise = getHtmlAndCss(url);
-
-    return htmlAndCssPromise.then(
-        function (result) {
-            return processPhantomResult(result);
-        },
+    return getHtmlAndCss(url)
+        .then(processPhantomResult,
         function (err) {
             console.log('getHtmlAndCss: failed:', err);
             return Promise.reject(err);
@@ -148,7 +142,7 @@ function get(req, res) {
     console.log('Starting get');
     doGet(parseForUrl(req), res)
         .finally(function () {
-            console.log('Ending request');
+            console.log('Ending get');
             res.end();
         });
 }
