@@ -1,8 +1,8 @@
 {
   "name": "getcritical",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Web front end for criticalcss",
-  "main": "index.js",
+  "main": "app.js",
   "dependencies": {
     "bluebird": "^2.10.1",
     "child-process-promise": "^1.1.0",
@@ -16,6 +16,20 @@
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tandoan/webCriticalCSS"
+  },
+  "keywords": {
+    "node",
+    "heroku",
+    "express",
+    "criticalcss",
+    "css"
+  },
+  "engines": {
+    "node": "4.1.1"
+  }
   "author": "Tan Doan",
   "license": "ISC"
 }
