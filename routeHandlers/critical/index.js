@@ -43,14 +43,18 @@ function cacheCss(url, css) {
     return cache.set(url, css);
 }
 
-function doGet(url, res) {
+function doGet(req, res) {
+    var url = req.query.url,
+        width = req.query.width || 1200,
+        height = req.query.height || 900;
+
     var cachedCss = getCachedCss(url);
     if (cachedCss) {
         return Promise.resolve(respondWithCss(res, cachedCss));
     }
 
     console.time('findCritical');
-    return fetchCriticalCss(url)
+    return fetchCriticalCss(url, width, height)
         .then(function (criticalCss) {
             cacheCss(url, criticalCss);
             return Promise.resolve(respondWithCss(res, criticalCss));
@@ -93,7 +97,7 @@ function saveHtmlAndCss(cssPromise, htmlAndCssReturn) {
  *
  * @param result an object where  result.stdout =  status: success/fail, url: string, css: [urls], and html: string
  */
-function processPhantomResult(result) {
+function processPhantomResult(width, height, result) {
     var cssPromises = [];
     var phantomString = result.stdout.toString();
 
@@ -123,15 +127,17 @@ function processPhantomResult(result) {
         .then(function criticalGetRulesWrapper(pathsObj) {
             return getRules(pathsObj.cssPath)
                 .then(function criticalFindCriticalWrapper(rules) {
-                    return findCritical(pathsObj.htmlPath, {rules: JSON.parse(rules)});
+                    return findCritical(pathsObj.htmlPath, {width: width, height: height, rules: JSON.parse(rules)});
                 });
         });
 
 }
 
-function fetchCriticalCss(url) {
+function fetchCriticalCss(url, width, height) {
+    var doProcess = processPhantomResult.bind(null,width);
+    doProcess = doProcess.bind(null, height);
     return getHtmlAndCss(url)
-        .then(processPhantomResult,
+        .then(doProcess,
         function (err) {
             console.log('getHtmlAndCss: failed:', err);
             return Promise.reject(err);
@@ -139,8 +145,7 @@ function fetchCriticalCss(url) {
 }
 
 function get(req, res) {
-    console.log('Starting get');
-    doGet(parseForUrl(req), res)
+    doGet(req, res)
         .finally(function () {
             console.log('Ending get');
             res.end();

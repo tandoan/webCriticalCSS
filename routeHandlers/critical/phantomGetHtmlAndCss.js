@@ -11,8 +11,10 @@ var page = require('webpage').create();
 var pageUrl = system.args[1];
 
 // TODO: add in media=screen?
+// can't just check the href, need to check for rel="stylesheet" but we don't get an attr element back
+// :(    regex on  rel="stylesheet" ?
 function isCssLink(node) {
-    return (node && node.href && node.href.match(/css$/i));
+    return (node && node.outerHTML && node.outerHTML.match(/stylesheet/i));
 }
 
 /**
@@ -36,20 +38,27 @@ page.open(pageUrl, function (status) {
 });
 
 page.onLoadFinished = function () {
-    var cssArray = [];
+    var cssArray = [],
+        i = 0;
+
+    // evaluate can't serialize complex objects, so we'll return just the needed fields from HTMLElement
     var linkElements = page.evaluate(function () {
-        return document.querySelectorAll("link");
+        return [].map.call(document.querySelectorAll("link"), function(link){
+            return {
+                href: link.href,
+                outerHTML: link.outerHTML
+            };
+        });
     });
-    for (var i = 0; i < linkElements.length; i++) {
-        if (isCssLink(linkElements[i])) {
-            cssArray.push(linkElements[i]['href']);
-        }
+    for (i = 0; i < linkElements.length; i++) {
+         if (isCssLink(linkElements[i])) {
+             cssArray.push(linkElements[i]['href']);
+         }
     }
 
-    setTimeout(function () {
-        // todo, strip \n\r  \t and stuff from page.content
-        console.log(JSON.stringify({"status": 'success', "url": pageUrl, "css": cssArray, "html": page.content}));
-        page.close();
-        phantom.exit();
-    }, 100);
+
+    // TODO: strip out all the \t and stuff from html
+    console.log(JSON.stringify({"status": 'success', "url": pageUrl, "css": cssArray, "html": page.content}));
+    page.close();
+    phantom.exit();
 };

@@ -1,7 +1,126 @@
-<h1>Find critical-path CSS</h1>
-<form>
-	<input type="url" id="url" name="url" placeholder="http://www.wikipedia.org"/>
-	<input type="number" id="width" name="width" placeholder="1280"/>
-	<input type="number" id="height" name="height" placeholder="800"/>
-	<input type="submit" value="Get Critical"/>
-</form>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="Find critical-path CSS">
+    <meta name="author" content="Tan Doan">
+    <title>WebCriticalCSS</title>
+
+    <style type="text/css">
+        label {
+            display: block;
+        }
+
+        input {
+            display: block;
+        }
+
+        .url {
+            width: 100%
+        }
+
+        .main-content {
+            width: 800px;
+            margin: auto;
+        }
+        textarea.css {
+            width:100%;
+            height:400px;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="main-content">
+    <h1>Find critical-path CSS</h1>
+
+    <form class="critical-form" id="critical-form">
+        <label for="url">Website Url</label>
+        <input type="url" id="url" name="url" class="url" placeholder="http://www.wikipedia.org"/>
+
+        <label for="width">Screen Width</label>
+        <input type="number" id="width" name="width" placeholder="1280"/>
+
+        <label for="height">Screen Height</label>
+        <input type="number" id="height" name="height" placeholder="800"/>
+
+
+        <input type="submit" value="Get Critical"/>
+    </form>
+
+    <div id="results">
+
+    </div>
+
+    <div>
+        <h1>About</h1>
+
+        <p>Externaly loaded CSS files block rendering until the files are loaded. In order to provide the best
+            perceived performance as possible for the user, one should inline CSS for elements located above the
+            fold.</p>
+    </div>
+
+</div>
+
+
+<script type="text/javascript">
+//nanoajax https://github.com/yanatan16/nanoajax
+	!function(e,t){function n(e){return e&&t.XDomainRequest&&!/MSIE 1/.test(navigator.userAgent)?new XDomainRequest:t.XMLHttpRequest?new XMLHttpRequest:void 0}function o(e,t,n){e[t]=e[t]||n}t.nanoajax=e;var r=["responseType","withCredentials","timeout","onprogress"];e.ajax=function(e,t){function u(e,n){return function(){d||t(c.status||e,c.response||c.responseText||n,c),d=!0}}var a=e.headers||{},s=e.body,i=e.method||(s?"POST":"GET"),d=!1,c=n(e.cors);c.open(i,e.url,!0);var l=c.onload=u(200);c.onreadystatechange=function(){4===c.readyState&&l()},c.onerror=u(null,"Error"),c.ontimeout=u(null,"Timeout"),c.onabort=u(null,"Abort"),s&&(o(a,"X-Requested-With","XMLHttpRequest"),o(a,"Content-Type","application/x-www-form-urlencoded"));for(var p,f=0,v=r.length;v>f;f++)p=r[f],void 0!==e[p]&&(c[p]=e[p]);for(var p in a)c.setRequestHeader(p,a[p]);return c.send(s),c}}({},function(){return this}());
+</script>
+
+<script type="text/javascript">
+    //https://github.com/alicelieutier/smoothScroll
+    !function(e,t){"use strict";"function"==typeof define&&define.amd?define(t):"object"==typeof exports&&"object"==typeof module?module.exports=t():e.smoothScroll=t()}(this,function(){"use strict";if("object"==typeof window&&void 0!==document.querySelectorAll&&void 0!==window.pageYOffset&&void 0!==history.pushState){var e=function(e){return"HTML"===e.nodeName?-window.pageYOffset:e.getBoundingClientRect().top+window.pageYOffset},t=function(e){return.5>e?4*e*e*e:(e-1)*(2*e-2)*(2*e-2)+1},n=function(e,n,o,i){return o>i?n:e+(n-e)*t(o/i)},o=function(t,o,i){o=o||500;var r=window.pageYOffset;if("number"==typeof t)var u=parseInt(t);else var u=e(t);var a=Date.now(),f=window.requestAnimationFrame||window.mozRequestAnimationFrame||window.webkitRequestAnimationFrame||function(e){window.setTimeout(e,15)},d=function(){var e=Date.now()-a;window.scroll(0,n(r,u,e,o)),e>o?"function"==typeof i&&i(t):f(d)};d()},i=function(e){e.preventDefault(),location.hash!==this.hash&&window.history.pushState(null,null,this.hash),o(document.getElementById(this.hash.substring(1)),500,function(e){location.replace("#"+e.id)})};return document.addEventListener("DOMContentLoaded",function(){for(var e,t=document.querySelectorAll('a[href^="#"]:not([href="#"])'),n=t.length;e=t[--n];)e.addEventListener("click",i,!1)}),o}});
+</script>
+
+<script type="text/javascript">
+    function handleSubmit(e) {
+        e.preventDefault();
+
+        var dataObj = {
+            "url": document.getElementById('url').value,
+            "width": document.getElementById('width').value,
+            "height": document.getElementById('height').value
+        };
+
+        //dataobj to query string
+        var queryString = '?' + Object.keys(dataObj).map(function(key) {
+            return encodeURIComponent(key) + '=' +
+                    encodeURIComponent(dataObj[key]);
+        }).join('&');
+
+
+        // check validity of input first
+
+        nanoajax.ajax({url: '/api/criticalcss/' + queryString}, function (code, responseText) {
+            if (200 == code) {
+                // tools: copy, download, fullscreen, close
+                var containerDiv = document.createElement('div');
+                containerDiv.className = "result";
+
+                var result = document.createElement('textArea');
+                result.className = "css";
+                var newContent = document.createTextNode(responseText);
+                result.appendChild(newContent);
+                containerDiv.appendChild(result);
+
+                document.getElementById('results').appendChild(containerDiv);
+                window.smoothScroll(containerDiv);
+            } else {
+                // handle error
+            }
+        });
+
+    }
+    var f = document.getElementById("critical-form");
+    f.addEventListener('submit', handleSubmit);
+</script>
+</body>
+</html>
+
+

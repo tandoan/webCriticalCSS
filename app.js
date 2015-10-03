@@ -9,7 +9,7 @@ app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static(__dirname + '/public'));
 
-app.get('/api/criticalcss/*', criticalHandler.get);
+app.get('/api/criticalcss', criticalHandler.get);
 
 var server = app.listen(app.get('port'), function () {
     var host = server.address().address;
